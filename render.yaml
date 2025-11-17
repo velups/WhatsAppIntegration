@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: whatsapp-integration-api
+    runtime: docker
+    repo: https://github.com/velups/WhatsAppIntegration
+    branch: main
+    healthCheckPath: /api/whatsapp/health
+    envVars:
+      - key: JAVA_OPTS
+        value: -Xmx512m -Xms256m
+      - key: SERVER_PORT
+        value: 8080
+      - key: WHATSAPP_WEBHOOK_VERIFY_TOKEN
+        generateValue: true
+      - key: WHATSAPP_API_ACCESS_TOKEN
+        sync: false
+      - key: WHATSAPP_API_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_RESPONSE_STATIC_MESSAGE
+        value: Thank you for your message! This is an automated response. We'll get back to you soon.
