@@ -25,7 +25,7 @@ public class GroqService {
     @Value("${groq.api.base-url:https://api.groq.com/openai/v1}")
     private String groqApiBaseUrl;
     
-    @Value("${groq.model:llama-3.1-70b-versatile}")
+    @Value("${groq.model:llama-3.3-70b-versatile}")
     private String model;
     
     @Value("${groq.max-tokens:500}")
