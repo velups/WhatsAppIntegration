@@ -13,6 +13,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -31,10 +32,12 @@ public class WhatsAppService {
     @Value("${whatsapp.api.base-url:https://graph.facebook.com/v18.0}")
     private String whatsAppApiBaseUrl;
     
-    @Value("${whatsapp.response.static-message:Thank you for your message! This is an automated response. We'll get back to you soon.}")
-    private String staticResponseMessage;
+    @Value("${whatsapp.ai.enabled:true}")
+    private boolean aiEnabled;
     
     private final WebClient.Builder webClientBuilder;
+    private final GroqService groqService;
+    private final ConversationHistoryService conversationHistoryService;
     
     /**
      * Verify the webhook with WhatsApp
@@ -44,7 +47,7 @@ public class WhatsAppService {
     }
     
     /**
-     * Process incoming WhatsApp message and send static response
+     * Process incoming WhatsApp message with AI companion response
      */
     public WhatsAppMessageResponse processMessage(WhatsAppMessageRequest request) {
         try {
@@ -66,13 +69,19 @@ public class WhatsAppService {
                         if ("text".equals(messageType) && message.getText() != null) {
                             messageContent = message.getText().getBody();
                             log.info("Received text message from {}: {}", senderPhoneNumber, messageContent);
+                            
+                            // Generate and send AI companion response
+                            String responseMessage = generateCompanionResponse(senderPhoneNumber, messageContent);
+                            sendWhatsAppMessage(senderPhoneNumber, responseMessage);
+                            
                         } else {
                             log.info("Received {} message from {}", messageType, senderPhoneNumber);
                             messageContent = String.format("Received %s message", messageType);
+                            
+                            // For non-text messages, send a friendly acknowledgment
+                            String responseMessage = "Thank you for sharing that with me, Aunty! While I can't see images or other media yet, I'm here to chat with you. How are you feeling today?";
+                            sendWhatsAppMessage(senderPhoneNumber, responseMessage);
                         }
-                        
-                        // Send static response back
-                        sendWhatsAppMessage(senderPhoneNumber, staticResponseMessage);
                         
                         // Return success response
                         return WhatsAppMessageResponse.success(
@@ -95,6 +104,53 @@ public class WhatsAppService {
         } catch (Exception e) {
             log.error("Error processing WhatsApp message", e);
             throw new RuntimeException("Failed to process WhatsApp message", e);
+        }
+    }
+    
+    /**
+     * Generate a companion response using AI
+     */
+    private String generateCompanionResponse(String phoneNumber, String userMessage) {
+        try {
+            // Check if this is the first message from the user
+            boolean isFirstMessage = conversationHistoryService.isFirstMessage(phoneNumber);
+            
+            if (isFirstMessage) {
+                // Send initial greeting
+                conversationHistoryService.markFirstMessageProcessed(phoneNumber);
+                String greeting = groqService.generateInitialGreeting(phoneNumber);
+                
+                // Add to conversation history
+                conversationHistoryService.addUserMessage(phoneNumber, userMessage);
+                conversationHistoryService.addAssistantMessage(phoneNumber, greeting);
+                
+                return greeting;
+            }
+            
+            // Add user message to conversation history
+            conversationHistoryService.addUserMessage(phoneNumber, userMessage);
+            
+            // Get conversation history
+            List<ConversationHistoryService.ChatMessage> conversationHistory = conversationHistoryService.getConversationHistory(phoneNumber);
+            
+            // Generate AI response if enabled and configured
+            String response;
+            if (aiEnabled && groqService.isConfigured()) {
+                response = groqService.generateCompanionResponse(conversationHistory, userMessage);
+            } else {
+                // Fallback response when AI is not enabled
+                response = "Hello Aunty! Thank you for your message. I'm here to chat with you and keep you company. How has your day been?";
+            }
+            
+            // Add assistant response to conversation history
+            conversationHistoryService.addAssistantMessage(phoneNumber, response);
+            
+            return response;
+            
+        } catch (Exception e) {
+            log.error("Error generating companion response", e);
+            // Return a friendly fallback message
+            return "Hello Aunty! I'm so glad to hear from you. Please tell me more about your day - I'm here to listen and chat with you!";
         }
     }
     
