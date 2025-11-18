@@ -2,6 +2,7 @@ package com.example.whatsapp.controller;
 
 import com.example.whatsapp.service.ConversationHistoryService;
 import com.example.whatsapp.service.GroqService;
+import com.example.whatsapp.service.AIProviderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,10 +16,12 @@ import java.util.Map;
 public class TestController {
     
     private final GroqService groqService;
+    private final AIProviderService aiProviderService;
     private final ConversationHistoryService conversationHistoryService;
     
-    public TestController(GroqService groqService, ConversationHistoryService conversationHistoryService) {
+    public TestController(GroqService groqService, AIProviderService aiProviderService, ConversationHistoryService conversationHistoryService) {
         this.groqService = groqService;
+        this.aiProviderService = aiProviderService;
         this.conversationHistoryService = conversationHistoryService;
     }
     

@@ -37,12 +37,15 @@ public class WhatsAppService {
     
     private final WebClient.Builder webClientBuilder;
     private final GroqService groqService;
+    private final AIProviderService aiProviderService;
     private final ConversationHistoryService conversationHistoryService;
     
     // Constructor
-    public WhatsAppService(WebClient.Builder webClientBuilder, GroqService groqService, ConversationHistoryService conversationHistoryService) {
+    public WhatsAppService(WebClient.Builder webClientBuilder, GroqService groqService, 
+                          AIProviderService aiProviderService, ConversationHistoryService conversationHistoryService) {
         this.webClientBuilder = webClientBuilder;
         this.groqService = groqService;
+        this.aiProviderService = aiProviderService;
         this.conversationHistoryService = conversationHistoryService;
     }
     
@@ -125,7 +128,7 @@ public class WhatsAppService {
             if (isFirstMessage) {
                 // Send initial greeting
                 conversationHistoryService.markFirstMessageProcessed(phoneNumber);
-                String greeting = groqService.generateInitialGreeting(phoneNumber);
+                String greeting = aiProviderService.generateInitialGreeting(phoneNumber);
                 
                 // Add to conversation history
                 conversationHistoryService.addUserMessage(phoneNumber, userMessage);
@@ -137,19 +140,30 @@ public class WhatsAppService {
             // Add user message to conversation history
             conversationHistoryService.addUserMessage(phoneNumber, userMessage);
             
-            // Generate AI response with fast fallback
+            // Generate AI response with multi-provider support
             String response;
-            if (aiEnabled && groqService.isConfigured()) {
+            if (aiEnabled && aiProviderService.hasAvailableProviders()) {
                 try {
                     // Get conversation history
                     List<ConversationHistoryService.ChatMessage> conversationHistory = conversationHistoryService.getConversationHistory(phoneNumber);
+                    response = aiProviderService.generateResponse(conversationHistory, userMessage);
+                    log.debug("Using AI provider service for response generation");
+                } catch (Exception aiException) {
+                    log.warn("All AI providers failed, using fallback: {}", aiException.getMessage());
+                    response = getFallbackResponse(userMessage);
+                }
+            } else if (aiEnabled && groqService.isConfigured()) {
+                // Fallback to Groq service if multi-provider is not available
+                try {
+                    List<ConversationHistoryService.ChatMessage> conversationHistory = conversationHistoryService.getConversationHistory(phoneNumber);
                     response = groqService.generateCompanionResponse(conversationHistory, userMessage);
+                    log.debug("Using Groq fallback service for response generation");
                 } catch (Exception groqException) {
-                    log.warn("Groq API call failed, using fallback: {}", groqException.getMessage());
+                    log.warn("Groq service failed, using static fallback: {}", groqException.getMessage());
                     response = getFallbackResponse(userMessage);
                 }
             } else {
-                log.debug("AI not enabled or configured, using fallback response");
+                log.debug("AI not enabled or no providers configured, using fallback response");
                 response = getFallbackResponse(userMessage);
             }
             
