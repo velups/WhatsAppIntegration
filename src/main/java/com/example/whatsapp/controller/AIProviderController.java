@@ -95,7 +95,7 @@ public class AIProviderController {
         groq.put("description", "Fast inference for open source LLMs");
         groq.put("free_tier", true);
         groq.put("signup_url", "https://console.groq.com/keys");
-        groq.put("models", Arrays.asList("mixtral-8x7b-32768", "llama-3.3-70b-versatile"));
+        groq.put("models", Arrays.asList("llama-3.3-70b-versatile", "llama-3.1-70b-versatile"));
         groq.put("env_var", "GROQ_API_KEY");
         providers.put("groq", groq);
         
@@ -119,14 +119,15 @@ public class AIProviderController {
         together.put("env_var", "TOGETHER_API_KEY");
         providers.put("together", together);
         
-        // Hugging Face
+        // Hugging Face (Deprecated)
         Map<String, Object> huggingface = new HashMap<>();
         huggingface.put("name", "Hugging Face");
-        huggingface.put("description", "Inference API for various open source models");
-        huggingface.put("free_tier", true);
+        huggingface.put("description", "DEPRECATED: Inference API no longer supported as of Nov 2024");
+        huggingface.put("free_tier", false);
         huggingface.put("signup_url", "https://huggingface.co/settings/tokens");
-        huggingface.put("models", Arrays.asList("microsoft/DialoGPT-medium", "facebook/blenderbot-400M-distill"));
+        huggingface.put("models", Arrays.asList("DEPRECATED"));
         huggingface.put("env_var", "HUGGINGFACE_API_KEY");
+        huggingface.put("status", "deprecated");
         providers.put("huggingface", huggingface);
         
         response.put("supported_providers", providers);

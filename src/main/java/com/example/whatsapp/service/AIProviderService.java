@@ -107,12 +107,13 @@ public class AIProviderService {
             ));
         }
         
-        // Initialize Hugging Face
-        if (isValidApiKey(hfApiKey)) {
-            providers.put("huggingface", new ProviderConfig(
-                "Hugging Face", hfApiBaseUrl, hfApiKey, hfModel, "huggingface"
-            ));
-        }
+        // Initialize Hugging Face (Deprecated - Inference API no longer supported)
+        // Commenting out due to API deprecation as of Nov 2024
+        // if (isValidApiKey(hfApiKey)) {
+        //     providers.put("huggingface", new ProviderConfig(
+        //         "Hugging Face", hfApiBaseUrl, hfApiKey, hfModel, "huggingface"
+        //     ));
+        // }
     }
     
     private boolean isValidApiKey(String apiKey) {
