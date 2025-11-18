@@ -81,7 +81,7 @@ public class GroqService {
      */
     public String generateCompanionResponse(List<ConversationHistoryService.ChatMessage> conversationHistory, String userMessage) {
         if (webClient == null) {
-            log.warn("Groq service not initialized. Returning fallback response.");
+            log.debug("Groq service not initialized. Returning fallback response.");
             return "Hello Aunty! I'm here to chat with you. How are you feeling today? Please tell me about your day!";
         }
         

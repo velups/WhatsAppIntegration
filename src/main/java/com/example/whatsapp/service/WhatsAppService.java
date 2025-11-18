@@ -137,16 +137,20 @@ public class WhatsAppService {
             // Add user message to conversation history
             conversationHistoryService.addUserMessage(phoneNumber, userMessage);
             
-            // Get conversation history
-            List<ConversationHistoryService.ChatMessage> conversationHistory = conversationHistoryService.getConversationHistory(phoneNumber);
-            
-            // Generate AI response if enabled and configured
+            // Generate AI response with fast fallback
             String response;
             if (aiEnabled && groqService.isConfigured()) {
-                response = groqService.generateCompanionResponse(conversationHistory, userMessage);
+                try {
+                    // Get conversation history
+                    List<ConversationHistoryService.ChatMessage> conversationHistory = conversationHistoryService.getConversationHistory(phoneNumber);
+                    response = groqService.generateCompanionResponse(conversationHistory, userMessage);
+                } catch (Exception groqException) {
+                    log.warn("Groq API call failed, using fallback: {}", groqException.getMessage());
+                    response = getFallbackResponse(userMessage);
+                }
             } else {
-                // Fallback response when AI is not enabled
-                response = "Hello Aunty! Thank you for your message. I'm here to chat with you and keep you company. How has your day been?";
+                log.debug("AI not enabled or configured, using fallback response");
+                response = getFallbackResponse(userMessage);
             }
             
             // Add assistant response to conversation history
@@ -158,6 +162,23 @@ public class WhatsAppService {
             log.error("Error generating companion response", e);
             // Return a friendly fallback message
             return "Hello Aunty! I'm so glad to hear from you. Please tell me more about your day - I'm here to listen and chat with you!";
+        }
+    }
+    
+    private String getFallbackResponse(String userMessage) {
+        // Simple keyword-based responses for common messages
+        String lowerMessage = userMessage.toLowerCase();
+        
+        if (lowerMessage.contains("hello") || lowerMessage.contains("hi")) {
+            return "Hello Aunty! 🌺 How are you doing today? I'm so happy to hear from you!";
+        } else if (lowerMessage.contains("good") || lowerMessage.contains("fine") || lowerMessage.contains("ok")) {
+            return "That's wonderful to hear, Aunty! I'm so glad you're doing well. Tell me more about your day!";
+        } else if (lowerMessage.contains("tired") || lowerMessage.contains("sad") || lowerMessage.contains("not good")) {
+            return "Oh dear, I'm sorry to hear that, Aunty. I'm here for you. Would you like to tell me what's on your mind?";
+        } else if (lowerMessage.contains("thank")) {
+            return "You're so welcome, Aunty! It's my pleasure to chat with you. How else can I brighten your day?";
+        } else {
+            return "Thank you for sharing that with me, Aunty! I'm here to listen and chat with you. How are you feeling today?";
         }
     }
     
