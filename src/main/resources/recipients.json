@@ -1,0 +1,24 @@
+[
+  {
+    "phoneNumber": "++6588098559",
+    "name": "QC",
+    "preferredTimeOfDay": "morning",
+    "customMessage": "Good morning {name}! 🌅 Hope you slept well and are ready for a beautiful day. How are you feeling today?",
+    "enabled": true,
+    "lastCheckSent": null,
+    "timezone": "Singapore",
+    "relationship": "friend",
+    "notes": "Sample recipient - enjoys morning conversations. Update with real contact information before enabling."
+  },
+  {
+    "phoneNumber": "+6583824052",
+    "name": "Velu",
+    "preferredTimeOfDay": "morning",
+    "customMessage": "Good evening {name}! 🌙 Hope you had a wonderful day today. Just checking in to see how you're doing.",
+    "enabled": true,
+    "lastCheckSent": null,
+    "timezone": "Asia/Singapore",
+    "relationship": "family",
+    "notes": "Sample recipient - prefers evening messages. Update with real contact information before enabling."
+  }
+]

@@ -1,0 +1,546 @@
+openapi: 3.0.3
+info:
+  title: WhatsApp Wellness Check API
+  description: |
+    API for automated wellness check messages via WhatsApp.
+    Sends personalized daily check-in messages to elderly recipients with configurable scheduling and recipient management.
+  version: 1.0.0
+  contact:
+    name: WhatsApp Integration Support
+    email: support@example.com
+
+servers:
+  - url: https://whatsappintegration-cbhz.onrender.com
+    description: Production server (Render)
+  - url: http://localhost:8080
+    description: Development server
+
+tags:
+  - name: Wellness Check
+    description: Send wellness check messages
+  - name: Recipients
+    description: Manage wellness check recipients
+  - name: Statistics
+    description: Monitor wellness check statistics
+
+paths:
+  /api/wellness/send:
+    post:
+      tags:
+        - Wellness Check
+      summary: Send wellness check to specific recipient
+      description: Sends a personalized wellness check message to a single recipient immediately
+      operationId: sendWellnessCheck
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WellnessCheckRequest'
+            examples:
+              morning:
+                summary: Morning wellness check
+                value:
+                  phoneNumber: "+6591234567"
+                  name: "Mary Johnson"
+                  timeOfDay: "morning"
+                  customMessage: "Good morning {name}! Hope you slept well. How are you feeling today?"
+              afternoon:
+                summary: Afternoon wellness check
+                value:
+                  phoneNumber: "+6591234567"
+                  name: "John Smith"
+                  timeOfDay: "afternoon"
+              evening:
+                summary: Evening wellness check with default message
+                value:
+                  phoneNumber: "+6591234567"
+                  name: "Susan Chen"
+                  timeOfDay: "evening"
+      responses:
+        '200':
+          description: Wellness check sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WellnessCheckResponse'
+              example:
+                status: "success"
+                message: "Wellness check message sent successfully"
+                recipientName: "Mary Johnson"
+                recipientPhoneNumber: "+6591234567"
+                sentMessage: "Good morning Mary Johnson! 🌅 Hope you slept well. How are you feeling today?"
+                sentAt: "2024-01-15T09:00:00"
+                messageId: "wellness_1705308000000"
+        '400':
+          description: Bad request - validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/wellness/send-all:
+    post:
+      tags:
+        - Wellness Check
+      summary: Send wellness check to all enabled recipients
+      description: Triggers wellness check messages to all recipients marked as enabled in the system
+      operationId: sendWellnessCheckToAll
+      responses:
+        '200':
+          description: Batch wellness check completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "completed"
+                  totalRecipients:
+                    type: integer
+                    example: 5
+                  successCount:
+                    type: integer
+                    example: 4
+                  failureCount:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: "Wellness checks sent to 5 recipients (4 success, 1 failed)"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/wellness/recipients:
+    get:
+      tags:
+        - Recipients
+      summary: Get all recipients
+      description: Retrieves list of all wellness check recipients (both enabled and disabled)
+      operationId: getAllRecipients
+      responses:
+        '200':
+          description: List of all recipients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Recipient'
+              example:
+                - phoneNumber: "+6591234567"
+                  name: "Mary Johnson"
+                  preferredTimeOfDay: "morning"
+                  customMessage: "Good morning {name}! Hope you're doing well today."
+                  enabled: true
+                  lastCheckSent: "2024-01-15T09:00:00"
+                  timezone: "Asia/Singapore"
+                  relationship: "daughter"
+                  notes: "Prefers morning messages with emojis"
+                - phoneNumber: "+1234567890"
+                  name: "John Smith"
+                  preferredTimeOfDay: "evening"
+                  customMessage: null
+                  enabled: false
+                  lastCheckSent: null
+                  timezone: "America/New_York"
+                  relationship: "friend"
+                  notes: "Uses default messages"
+    
+    post:
+      tags:
+        - Recipients
+      summary: Add new recipient
+      description: Adds a new recipient to the wellness check list
+      operationId: addRecipient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Recipient'
+            example:
+              phoneNumber: "+6591234567"
+              name: "Mary Johnson"
+              preferredTimeOfDay: "morning"
+              customMessage: "Good morning {name}! 🌅 Hope you slept well!"
+              enabled: true
+              timezone: "Asia/Singapore"
+              relationship: "grandmother"
+              notes: "Loves morning conversations"
+      responses:
+        '200':
+          description: Recipient added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Recipient added successfully"
+                  name:
+                    type: string
+                    example: "Mary Johnson"
+                  phoneNumber:
+                    type: string
+                    example: "+6591234567"
+        '400':
+          description: Bad request - validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/wellness/recipients/enabled:
+    get:
+      tags:
+        - Recipients
+      summary: Get enabled recipients only
+      description: Retrieves list of recipients who are currently enabled for wellness checks
+      operationId: getEnabledRecipients
+      responses:
+        '200':
+          description: List of enabled recipients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Recipient'
+
+  /api/wellness/recipients/due:
+    get:
+      tags:
+        - Recipients
+      summary: Get recipients due for wellness check
+      description: Retrieves list of recipients who are due for their next wellness check (haven't received one in 20+ hours)
+      operationId: getRecipientsDue
+      responses:
+        '200':
+          description: List of recipients due for wellness check
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Recipient'
+
+  /api/wellness/recipients/{phoneNumber}/enable:
+    put:
+      tags:
+        - Recipients
+      summary: Enable or disable recipient
+      description: Toggles wellness check status for a specific recipient
+      operationId: toggleRecipient
+      parameters:
+        - name: phoneNumber
+          in: path
+          required: true
+          description: Phone number of the recipient (URL encoded if contains +)
+          schema:
+            type: string
+            example: "+6591234567"
+        - name: enabled
+          in: query
+          required: true
+          description: Whether to enable or disable the recipient
+          schema:
+            type: boolean
+            example: true
+      responses:
+        '200':
+          description: Recipient status updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Recipient enabled wellness checks"
+                  phoneNumber:
+                    type: string
+                    example: "+6591234567"
+                  enabled:
+                    type: string
+                    example: "true"
+        '404':
+          description: Recipient not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/wellness/recipients/{phoneNumber}:
+    delete:
+      tags:
+        - Recipients
+      summary: Remove recipient
+      description: Permanently removes a recipient from the wellness check list
+      operationId: removeRecipient
+      parameters:
+        - name: phoneNumber
+          in: path
+          required: true
+          description: Phone number of the recipient to remove (URL encoded if contains +)
+          schema:
+            type: string
+            example: "+6591234567"
+      responses:
+        '200':
+          description: Recipient removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Recipient removed successfully"
+                  phoneNumber:
+                    type: string
+                    example: "+6591234567"
+        '404':
+          description: Recipient not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/wellness/stats:
+    get:
+      tags:
+        - Statistics
+      summary: Get wellness check statistics
+      description: Returns current statistics and configuration for the wellness check system
+      operationId: getStats
+      responses:
+        '200':
+          description: Wellness check statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WellnessCheckStats'
+              example:
+                totalRecipients: 10
+                enabledRecipients: 5
+                recipientsDueForCheck: 2
+                schedulerEnabled: true
+                nextCheckHours: [9, 14, 19]
+
+  /api/wellness/health:
+    get:
+      tags:
+        - Statistics
+      summary: Health check for wellness service
+      description: Returns the health status of the wellness check service
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  service:
+                    type: string
+                    example: "Wellness Check Service"
+                  enabledRecipients:
+                    type: integer
+                    example: 5
+                  timestamp:
+                    type: integer
+                    format: int64
+                    example: 1705308000000
+
+components:
+  schemas:
+    WellnessCheckRequest:
+      type: object
+      required:
+        - phoneNumber
+        - name
+      properties:
+        phoneNumber:
+          type: string
+          pattern: '^\+?[1-9]\d{1,14}$'
+          description: Recipient's phone number with country code
+          example: "+6591234567"
+        name:
+          type: string
+          minLength: 1
+          description: Recipient's name for personalized greeting
+          example: "Mary Johnson"
+        customMessage:
+          type: string
+          description: Optional custom message (use {name} as placeholder)
+          example: "Good morning {name}! Hope you're feeling wonderful today!"
+        timeOfDay:
+          type: string
+          enum: [morning, afternoon, evening]
+          description: Time of day for appropriate greeting selection
+          example: "morning"
+
+    WellnessCheckResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success, error]
+          example: "success"
+        message:
+          type: string
+          example: "Wellness check message sent successfully"
+        recipientName:
+          type: string
+          example: "Mary Johnson"
+        recipientPhoneNumber:
+          type: string
+          example: "+6591234567"
+        sentMessage:
+          type: string
+          example: "Good morning Mary Johnson! 🌅 Hope you slept well. How are you feeling today?"
+        sentAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T09:00:00"
+        messageId:
+          type: string
+          example: "wellness_1705308000000"
+
+    Recipient:
+      type: object
+      required:
+        - phoneNumber
+        - name
+      properties:
+        phoneNumber:
+          type: string
+          pattern: '^\+?[1-9]\d{1,14}$'
+          description: Recipient's phone number with country code
+          example: "+6591234567"
+        name:
+          type: string
+          description: Recipient's name
+          example: "Mary Johnson"
+        preferredTimeOfDay:
+          type: string
+          enum: [morning, afternoon, evening]
+          description: Preferred time for wellness checks
+          example: "morning"
+        customMessage:
+          type: string
+          nullable: true
+          description: Custom message template (null uses default)
+          example: "Good morning {name}! 🌅 Hope you slept well!"
+        enabled:
+          type: boolean
+          description: Whether wellness checks are enabled for this recipient
+          example: true
+        lastCheckSent:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of last wellness check sent
+          example: "2024-01-15T09:00:00"
+        timezone:
+          type: string
+          description: Recipient's timezone
+          example: "Asia/Singapore"
+        relationship:
+          type: string
+          description: Relationship to the recipient
+          example: "grandmother"
+        notes:
+          type: string
+          description: Additional notes about the recipient
+          example: "Prefers morning messages with emojis"
+
+    WellnessCheckStats:
+      type: object
+      properties:
+        totalRecipients:
+          type: integer
+          description: Total number of recipients in the system
+          example: 10
+        enabledRecipients:
+          type: integer
+          description: Number of recipients with wellness checks enabled
+          example: 5
+        recipientsDueForCheck:
+          type: integer
+          description: Number of recipients due for their next check
+          example: 2
+        schedulerEnabled:
+          type: boolean
+          description: Whether automated scheduling is enabled
+          example: true
+        nextCheckHours:
+          type: array
+          items:
+            type: integer
+          description: Hours when wellness checks are scheduled (24-hour format)
+          example: [9, 14, 19]
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "error"
+        message:
+          type: string
+          example: "Validation failed"
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: "phoneNumber"
+              message:
+                type: string
+                example: "Invalid phone number format"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2024-01-15T09:00:00"
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authentication (if implemented)
+
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authentication (if implemented)

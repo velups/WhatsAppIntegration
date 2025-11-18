@@ -3,8 +3,8 @@ package com.example.whatsapp.service;
 import com.example.whatsapp.dto.WhatsAppMessageRequest;
 import com.example.whatsapp.dto.WhatsAppMessageResponse;
 import com.example.whatsapp.dto.WhatsAppOutgoingMessage;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -16,9 +16,9 @@ import java.time.Instant;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class WhatsAppService {
+    
+    private static final Logger log = LoggerFactory.getLogger(WhatsAppService.class);
     
     @Value("${whatsapp.webhook.verify-token}")
     private String webhookVerifyToken;
@@ -38,6 +38,13 @@ public class WhatsAppService {
     private final WebClient.Builder webClientBuilder;
     private final GroqService groqService;
     private final ConversationHistoryService conversationHistoryService;
+    
+    // Constructor
+    public WhatsAppService(WebClient.Builder webClientBuilder, GroqService groqService, ConversationHistoryService conversationHistoryService) {
+        this.webClientBuilder = webClientBuilder;
+        this.groqService = groqService;
+        this.conversationHistoryService = conversationHistoryService;
+    }
     
     /**
      * Verify the webhook with WhatsApp

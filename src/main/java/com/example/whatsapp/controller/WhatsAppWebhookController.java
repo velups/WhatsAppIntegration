@@ -3,19 +3,24 @@ package com.example.whatsapp.controller;
 import com.example.whatsapp.dto.WhatsAppMessageRequest;
 import com.example.whatsapp.dto.WhatsAppMessageResponse;
 import com.example.whatsapp.service.WhatsAppService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/whatsapp")
-@RequiredArgsConstructor
-@Slf4j
 public class WhatsAppWebhookController {
     
+    private static final Logger log = LoggerFactory.getLogger(WhatsAppWebhookController.class);
+    
     private final WhatsAppService whatsAppService;
+    
+    // Constructor
+    public WhatsAppWebhookController(WhatsAppService whatsAppService) {
+        this.whatsAppService = whatsAppService;
+    }
     
     /**
      * Webhook verification endpoint for WhatsApp Business API
