@@ -173,13 +173,17 @@ public class WhatsAppService {
             // Add user message to conversation history
             conversationHistoryService.addUserMessage(phoneNumber, userMessage);
             
+            // Look up user name for personalized responses
+            Optional<Recipient> recipientOpt = recipientService.getRecipientByPhoneNumber(phoneNumber);
+            String userName = recipientOpt.map(Recipient::getDisplayName).orElse(null);
+
             // Generate AI response with multi-provider support
             String response;
             if (aiEnabled && aiProviderService.hasAvailableProviders()) {
                 try {
                     // Get conversation history
                     List<ConversationHistoryService.ChatMessage> conversationHistory = conversationHistoryService.getConversationHistory(phoneNumber);
-                    response = aiProviderService.generateResponse(conversationHistory, userMessage);
+                    response = aiProviderService.generateResponse(conversationHistory, userMessage, userName);
                     log.debug("Using AI provider service for response generation");
                 } catch (Exception aiException) {
                     log.warn("All AI providers failed, using fallback: {}", aiException.getMessage());

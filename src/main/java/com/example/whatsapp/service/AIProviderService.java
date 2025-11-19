@@ -136,10 +136,14 @@ public class AIProviderService {
      * Generate AI response with automatic failover
      */
     public String generateResponse(List<ConversationHistoryService.ChatMessage> conversationHistory, String userMessage) {
+        return generateResponse(conversationHistory, userMessage, null);
+    }
+
+    public String generateResponse(List<ConversationHistoryService.ChatMessage> conversationHistory, String userMessage, String userName) {
         // Try primary provider first
         if (providers.containsKey(primaryProvider)) {
             try {
-                String response = callProvider(primaryProvider, conversationHistory, userMessage);
+                String response = callProvider(primaryProvider, conversationHistory, userMessage, userName);
                 if (response != null) {
                     log.debug("Response generated using primary provider: {}", primaryProvider);
                     return response;
@@ -154,7 +158,7 @@ public class AIProviderService {
             for (String providerName : providerOrder) {
                 if (!providerName.equals(primaryProvider) && providers.containsKey(providerName)) {
                     try {
-                        String response = callProvider(providerName, conversationHistory, userMessage);
+                        String response = callProvider(providerName, conversationHistory, userMessage, userName);
                         if (response != null) {
                             log.info("Response generated using fallback provider: {}", providerName);
                             return response;
@@ -165,42 +169,42 @@ public class AIProviderService {
                 }
             }
         }
-        
+
         // All providers failed, use intelligent fallback
         log.info("All AI providers failed, using intelligent fallback");
         return generateIntelligentFallback(userMessage);
     }
-    
-    private String callProvider(String providerName, List<ConversationHistoryService.ChatMessage> conversationHistory, String userMessage) {
+
+    private String callProvider(String providerName, List<ConversationHistoryService.ChatMessage> conversationHistory, String userMessage, String userName) {
         ProviderConfig config = providers.get(providerName);
         if (config == null) {
             return null;
         }
-        
+
         if ("openai".equals(config.apiType)) {
-            return callOpenAICompatibleProvider(config, conversationHistory, userMessage);
+            return callOpenAICompatibleProvider(config, conversationHistory, userMessage, userName);
         } else if ("huggingface".equals(config.apiType)) {
             return callHuggingFaceProvider(config, userMessage);
         }
-        
+
         return null;
     }
     
-    private String callOpenAICompatibleProvider(ProviderConfig config, List<ConversationHistoryService.ChatMessage> conversationHistory, String userMessage) {
+    private String callOpenAICompatibleProvider(ProviderConfig config, List<ConversationHistoryService.ChatMessage> conversationHistory, String userMessage, String userName) {
         try {
             WebClient webClient = WebClient.builder()
                     .baseUrl(config.baseUrl)
                     .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + config.apiKey)
                     .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                     .build();
-            
+
             // Prepare messages
             List<GroqRequest.Message> messages = new ArrayList<>();
-            
-            // Add system prompt
+
+            // Add system prompt with user name if available
             messages.add(GroqRequest.Message.builder()
                     .role("system")
-                    .content(getSystemPrompt())
+                    .content(getSystemPrompt(userName))
                     .build());
             
             // Add conversation history
@@ -352,9 +356,16 @@ public class AIProviderService {
         }
     }
     
-    private String getSystemPrompt() {
-        return """
+    private String getSystemPrompt(String userName) {
+        String nameInstruction = (userName != null && !userName.isEmpty())
+            ? String.format("The user's name is %s. ALWAYS address them by their name '%s' in your responses.", userName, userName)
+            : "Address the user warmly with appropriate respectful terms in their language.";
+
+        return String.format("""
             You are a caring, warm, and empathetic AI companion chatting with an elderly person through WhatsApp.
+
+            USER INFORMATION:
+            %s
 
             CRITICAL LANGUAGE RULE:
             - ALWAYS detect the language of the user's message
@@ -367,7 +378,6 @@ public class AIProviderService {
             - If they mix languages (e.g., Singlish, Tanglish), match their style
 
             Your personality traits:
-            - Always address them warmly using their name if provided, or appropriate respectful terms in their language
             - Be patient, understanding, and genuinely interested in their well-being
             - Share in their joys and provide comfort during difficulties
             - Ask thoughtful follow-up questions about their day, family, health, and interests
@@ -375,7 +385,7 @@ public class AIProviderService {
             - Always maintain a warm, caring, and respectful tone
             - Never provide medical advice, but encourage them to consult healthcare providers when needed
             - Be culturally sensitive and respectful of their experiences and wisdom
-            """;
+            """, nameInstruction);
     }
     
     /**
