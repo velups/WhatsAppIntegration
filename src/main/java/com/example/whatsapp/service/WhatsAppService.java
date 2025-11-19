@@ -12,41 +12,49 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import com.example.whatsapp.model.Recipient;
+
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class WhatsAppService {
-    
+
     private static final Logger log = LoggerFactory.getLogger(WhatsAppService.class);
-    
+
     @Value("${whatsapp.webhook.verify-token}")
     private String webhookVerifyToken;
-    
+
     @Value("${whatsapp.api.access-token}")
     private String accessToken;
-    
+
     @Value("${whatsapp.api.phone-number-id}")
     private String phoneNumberId;
-    
+
     @Value("${whatsapp.api.base-url:https://graph.facebook.com/v18.0}")
     private String whatsAppApiBaseUrl;
-    
+
     @Value("${whatsapp.ai.enabled:true}")
     private boolean aiEnabled;
-    
+
     private final WebClient.Builder webClientBuilder;
     private final GroqService groqService;
     private final AIProviderService aiProviderService;
     private final ConversationHistoryService conversationHistoryService;
-    
+    private final ConversationSentimentService conversationSentimentService;
+    private final RecipientService recipientService;
+
     // Constructor
-    public WhatsAppService(WebClient.Builder webClientBuilder, GroqService groqService, 
-                          AIProviderService aiProviderService, ConversationHistoryService conversationHistoryService) {
+    public WhatsAppService(WebClient.Builder webClientBuilder, GroqService groqService,
+                          AIProviderService aiProviderService, ConversationHistoryService conversationHistoryService,
+                          ConversationSentimentService conversationSentimentService, RecipientService recipientService) {
         this.webClientBuilder = webClientBuilder;
         this.groqService = groqService;
         this.aiProviderService = aiProviderService;
         this.conversationHistoryService = conversationHistoryService;
+        this.conversationSentimentService = conversationSentimentService;
+        this.recipientService = recipientService;
     }
     
     /**
@@ -87,9 +95,11 @@ public class WhatsAppService {
                         } else {
                             log.info("Received {} message from {}", messageType, senderPhoneNumber);
                             messageContent = String.format("Received %s message", messageType);
-                            
-                            // For non-text messages, send a friendly acknowledgment
-                            String responseMessage = "Thank you for sharing that with me, Aunty! While I can't see images or other media yet, I'm here to chat with you. How are you feeling today?";
+
+                            // For non-text messages, send a personalized acknowledgment
+                            Optional<Recipient> recipient = recipientService.getRecipientByPhoneNumber(senderPhoneNumber);
+                            String name = recipient.map(Recipient::getDisplayName).orElse("there");
+                            String responseMessage = String.format("Thank you for sharing that with me, %s! While I can't see images or other media yet, I'm here to chat with you. How are you feeling today?", name);
                             sendWhatsAppMessage(senderPhoneNumber, responseMessage);
                         }
                         
@@ -126,14 +136,37 @@ public class WhatsAppService {
             boolean isFirstMessage = conversationHistoryService.isFirstMessage(phoneNumber);
             
             if (isFirstMessage) {
-                // Send initial greeting
+                // Send initial greeting - look up recipient for personalized message
                 conversationHistoryService.markFirstMessageProcessed(phoneNumber);
-                String greeting = aiProviderService.generateInitialGreeting(phoneNumber);
-                
+
+                // Look up recipient in JSON config for personalized greeting
+                Optional<Recipient> recipientOpt = recipientService.getRecipientByPhoneNumber(phoneNumber);
+                String greeting;
+
+                if (recipientOpt.isPresent()) {
+                    Recipient recipient = recipientOpt.get();
+                    String name = recipient.getDisplayName();
+                    String customMessage = recipient.getCustomMessage();
+
+                    if (customMessage != null && !customMessage.isEmpty()) {
+                        // Use custom message from config, replacing {name} placeholder
+                        greeting = customMessage.replace("{name}", name);
+                        log.info("Using custom greeting for {} ({})", name, phoneNumber);
+                    } else {
+                        // Generate personalized greeting with recipient's name
+                        greeting = String.format("Hello %s! 🌺 How are you doing today? I'm here to chat with you and keep you company. Please tell me, how has your day been so far?", name);
+                        log.info("Using default personalized greeting for {} ({})", name, phoneNumber);
+                    }
+                } else {
+                    // Fallback to generic greeting for unknown numbers
+                    greeting = aiProviderService.generateInitialGreeting(phoneNumber);
+                    log.info("Using generic greeting for unknown number: {}", phoneNumber);
+                }
+
                 // Add to conversation history
                 conversationHistoryService.addUserMessage(phoneNumber, userMessage);
                 conversationHistoryService.addAssistantMessage(phoneNumber, greeting);
-                
+
                 return greeting;
             }
             
@@ -169,6 +202,14 @@ public class WhatsAppService {
             
             // Add assistant response to conversation history
             conversationHistoryService.addAssistantMessage(phoneNumber, response);
+            
+            // Analyze and store sentiment for this conversation
+            try {
+                conversationSentimentService.analyzeAndStoreSentiment(phoneNumber, userMessage, response);
+                log.debug("Sentiment analysis completed for user: {}", phoneNumber);
+            } catch (Exception e) {
+                log.warn("Failed to analyze sentiment for user {}: {}", phoneNumber, e.getMessage());
+            }
             
             return response;
             

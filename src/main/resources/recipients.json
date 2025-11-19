@@ -20,5 +20,27 @@
     "timezone": "Asia/Singapore",
     "relationship": "family",
     "notes": "Sample recipient - prefers evening messages. Update with real contact information before enabling."
+  },
+  {
+    "phoneNumber": "+6592489410",
+    "name": "Pardha",
+    "preferredTimeOfDay": "morning",
+    "customMessage": "Good Morning {name}! 🌙 Hope you had a wonderful day today. Just checking in to see how you're doing.",
+    "enabled": true,
+    "lastCheckSent": null,
+    "timezone": "Asia/Singapore",
+    "relationship": "family",
+    "notes": "Sample recipient - prefers Morning messages. Update with real contact information before enabling."
+  },
+    {
+    "phoneNumber": "+6592206330",
+    "name": "Cleave",
+    "preferredTimeOfDay": "morning",
+    "customMessage": "Good evening {name}! 🌙 Hope you had a wonderful day today. Just checking in to see how you're doing.",
+    "enabled": true,
+    "lastCheckSent": null,
+    "timezone": "Asia/Singapore",
+    "relationship": "family",
+    "notes": "Sample recipient - prefers evening messages. Update with real contact information before enabling."
   }
 ]
