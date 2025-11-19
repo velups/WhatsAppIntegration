@@ -3,7 +3,7 @@ package com.example.whatsapp.service;
 import com.example.whatsapp.dto.WellnessCheckRequest;
 import com.example.whatsapp.dto.WellnessCheckResponse;
 import com.example.whatsapp.dto.WhatsAppOutgoingMessage;
-import com.example.whatsapp.model.Recipient;
+import com.example.whatsapp.entity.RecipientEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -125,15 +125,15 @@ public class WellnessCheckService {
             return;
         }
         
-        List<Recipient> recipientsDue = recipientService.getRecipientsDueForCheck();
+        List<RecipientEntity> recipientsDue = recipientService.getRecipientsDueForCheck();
         if (recipientsDue.isEmpty()) {
             log.debug("No recipients due for wellness check at {}", currentHour);
             return;
         }
-        
+
         log.info("Starting {} wellness checks at {} ({})", recipientsDue.size(), currentHour, timeOfDay);
-        
-        for (Recipient recipient : recipientsDue) {
+
+        for (RecipientEntity recipient : recipientsDue) {
             try {
                 // Check if this is the right time for this recipient
                 if (shouldSendAtThisTime(recipient, timeOfDay)) {
@@ -170,7 +170,7 @@ public class WellnessCheckService {
         return null; // Outside wellness check hours
     }
     
-    private boolean shouldSendAtThisTime(Recipient recipient, String currentTimeOfDay) {
+    private boolean shouldSendAtThisTime(RecipientEntity recipient, String currentTimeOfDay) {
         String preferredTime = recipient.getPreferredTimeOfDay();
         return preferredTime == null || preferredTime.isEmpty() || preferredTime.equals(currentTimeOfDay);
     }
@@ -233,9 +233,9 @@ public class WellnessCheckService {
      * Get wellness check statistics
      */
     public WellnessCheckStats getStats() {
-        List<Recipient> allRecipients = recipientService.getAllRecipients();
-        List<Recipient> enabledRecipients = recipientService.getEnabledRecipients();
-        List<Recipient> recipientsDue = recipientService.getRecipientsDueForCheck();
+        List<RecipientEntity> allRecipients = recipientService.getAllRecipients();
+        List<RecipientEntity> enabledRecipients = recipientService.getEnabledRecipients();
+        List<RecipientEntity> recipientsDue = recipientService.getRecipientsDueForCheck();
         
         return WellnessCheckStats.builder()
                 .totalRecipients(allRecipients.size())

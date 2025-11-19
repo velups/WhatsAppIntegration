@@ -2,7 +2,7 @@ package com.example.whatsapp.service;
 
 import com.example.whatsapp.dto.SentimentAnalysis;
 import com.example.whatsapp.entity.ConversationSentiment;
-import com.example.whatsapp.model.Recipient;
+import com.example.whatsapp.entity.RecipientEntity;
 import com.example.whatsapp.repository.ConversationSentimentRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -232,14 +232,14 @@ public class ConversationSentimentService {
     private void checkAndAlertCaretaker(String phoneNumber, SentimentAnalysis analysis, int consecutiveCount) {
         try {
             // Look up recipient to get caretaker info
-            Optional<Recipient> recipientOpt = recipientService.getRecipientByPhoneNumber(phoneNumber);
+            Optional<RecipientEntity> recipientOpt = recipientService.getRecipientByPhoneNumber(phoneNumber);
 
             if (recipientOpt.isEmpty()) {
                 log.warn("No recipient found for phone number: {}. Cannot alert caretaker.", phoneNumber);
                 return;
             }
 
-            Recipient recipient = recipientOpt.get();
+            RecipientEntity recipient = recipientOpt.get();
             String caretakerPhone = recipient.getCaretakerPhoneNumber();
             String caretakerName = recipient.getCaretakerName();
 

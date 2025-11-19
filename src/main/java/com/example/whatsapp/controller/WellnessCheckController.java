@@ -2,7 +2,7 @@ package com.example.whatsapp.controller;
 
 import com.example.whatsapp.dto.WellnessCheckRequest;
 import com.example.whatsapp.dto.WellnessCheckResponse;
-import com.example.whatsapp.model.Recipient;
+import com.example.whatsapp.entity.RecipientEntity;
 import com.example.whatsapp.service.RecipientService;
 import com.example.whatsapp.service.WellnessCheckService;
 import jakarta.validation.Valid;
@@ -51,11 +51,11 @@ public class WellnessCheckController {
     public ResponseEntity<Map<String, Object>> sendWellnessCheckToAll() {
         log.info("Triggering wellness check for all enabled recipients");
         
-        List<Recipient> enabledRecipients = recipientService.getEnabledRecipients();
+        List<RecipientEntity> enabledRecipients = recipientService.getEnabledRecipients();
         int successCount = 0;
         int failureCount = 0;
-        
-        for (Recipient recipient : enabledRecipients) {
+
+        for (RecipientEntity recipient : enabledRecipients) {
             try {
                 WellnessCheckRequest request = WellnessCheckRequest.builder()
                         .phoneNumber(recipient.getPhoneNumber())
@@ -98,7 +98,7 @@ public class WellnessCheckController {
      * Get all recipients
      */
     @GetMapping("/recipients")
-    public ResponseEntity<List<Recipient>> getAllRecipients() {
+    public ResponseEntity<List<RecipientEntity>> getAllRecipients() {
         return ResponseEntity.ok(recipientService.getAllRecipients());
     }
     
@@ -106,7 +106,7 @@ public class WellnessCheckController {
      * Get enabled recipients only
      */
     @GetMapping("/recipients/enabled")
-    public ResponseEntity<List<Recipient>> getEnabledRecipients() {
+    public ResponseEntity<List<RecipientEntity>> getEnabledRecipients() {
         return ResponseEntity.ok(recipientService.getEnabledRecipients());
     }
     
@@ -114,7 +114,7 @@ public class WellnessCheckController {
      * Get recipients due for wellness check
      */
     @GetMapping("/recipients/due")
-    public ResponseEntity<List<Recipient>> getRecipientsDue() {
+    public ResponseEntity<List<RecipientEntity>> getRecipientsDue() {
         return ResponseEntity.ok(recipientService.getRecipientsDueForCheck());
     }
     
@@ -122,9 +122,9 @@ public class WellnessCheckController {
      * Add a new recipient
      */
     @PostMapping("/recipients")
-    public ResponseEntity<Map<String, String>> addRecipient(@Valid @RequestBody Recipient recipient) {
+    public ResponseEntity<Map<String, String>> addRecipient(@Valid @RequestBody RecipientEntity recipient) {
         log.info("Adding new recipient: {} ({})", recipient.getName(), recipient.getPhoneNumber());
-        
+
         // Set default values
         if (recipient.getPreferredTimeOfDay() == null || recipient.getPreferredTimeOfDay().isEmpty()) {
             recipient.setPreferredTimeOfDay("morning");
@@ -132,7 +132,7 @@ public class WellnessCheckController {
         if (recipient.getTimezone() == null || recipient.getTimezone().isEmpty()) {
             recipient.setTimezone("UTC");
         }
-        
+
         recipientService.addRecipient(recipient);
         
         return ResponseEntity.ok(Map.of(

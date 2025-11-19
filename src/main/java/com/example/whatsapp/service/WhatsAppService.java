@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import com.example.whatsapp.model.Recipient;
+import com.example.whatsapp.entity.RecipientEntity;
 
 import java.time.Instant;
 import java.util.List;
@@ -97,8 +97,8 @@ public class WhatsAppService {
                             messageContent = String.format("Received %s message", messageType);
 
                             // For non-text messages, send a personalized acknowledgment
-                            Optional<Recipient> recipient = recipientService.getRecipientByPhoneNumber(senderPhoneNumber);
-                            String name = recipient.map(Recipient::getDisplayName).orElse("there");
+                            Optional<RecipientEntity> recipient = recipientService.getRecipientByPhoneNumber(senderPhoneNumber);
+                            String name = recipient.map(RecipientEntity::getDisplayName).orElse("there");
                             String responseMessage = String.format("Thank you for sharing that with me, %s! While I can't see images or other media yet, I'm here to chat with you. How are you feeling today?", name);
                             sendWhatsAppMessage(senderPhoneNumber, responseMessage);
                         }
@@ -139,12 +139,12 @@ public class WhatsAppService {
                 // Send initial greeting - look up recipient for personalized message
                 conversationHistoryService.markFirstMessageProcessed(phoneNumber);
 
-                // Look up recipient in JSON config for personalized greeting
-                Optional<Recipient> recipientOpt = recipientService.getRecipientByPhoneNumber(phoneNumber);
+                // Look up recipient in database for personalized greeting
+                Optional<RecipientEntity> recipientOpt = recipientService.getRecipientByPhoneNumber(phoneNumber);
                 String greeting;
 
                 if (recipientOpt.isPresent()) {
-                    Recipient recipient = recipientOpt.get();
+                    RecipientEntity recipient = recipientOpt.get();
                     String name = recipient.getDisplayName();
                     String customMessage = recipient.getCustomMessage();
 
@@ -174,8 +174,8 @@ public class WhatsAppService {
             conversationHistoryService.addUserMessage(phoneNumber, userMessage);
             
             // Look up user name for personalized responses
-            Optional<Recipient> recipientOpt = recipientService.getRecipientByPhoneNumber(phoneNumber);
-            String userName = recipientOpt.map(Recipient::getDisplayName).orElse(null);
+            Optional<RecipientEntity> recipientOpt = recipientService.getRecipientByPhoneNumber(phoneNumber);
+            String userName = recipientOpt.map(RecipientEntity::getDisplayName).orElse(null);
 
             // Generate AI response with multi-provider support
             String response;
