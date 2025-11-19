@@ -89,7 +89,19 @@ public class WeeklyReportService {
 
     public Map<String, Object> generateReportData(String phoneNumber, RecipientEntity recipient) {
         LocalDateTime weekAgo = LocalDateTime.now().minusDays(7);
+
+        // Try with original phone number first
         List<ConversationSentiment> sentiments = sentimentRepository.findUserSentimentsAfter(phoneNumber, weekAgo);
+
+        // If no results, try with + prefix (WhatsApp stores with +)
+        if (sentiments.isEmpty() && !phoneNumber.startsWith("+")) {
+            sentiments = sentimentRepository.findUserSentimentsAfter("+" + phoneNumber, weekAgo);
+        }
+
+        // If still no results, try without + prefix
+        if (sentiments.isEmpty() && phoneNumber.startsWith("+")) {
+            sentiments = sentimentRepository.findUserSentimentsAfter(phoneNumber.substring(1), weekAgo);
+        }
 
         Map<String, Object> report = new HashMap<>();
 
