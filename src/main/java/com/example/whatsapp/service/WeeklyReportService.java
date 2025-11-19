@@ -103,6 +103,19 @@ public class WeeklyReportService {
             sentiments = sentimentRepository.findUserSentimentsAfter(phoneNumber.substring(1), weekAgo);
         }
 
+        // If still empty, get all-time data (for testing/demo purposes)
+        if (sentiments.isEmpty()) {
+            sentiments = sentimentRepository.findByPhoneNumberOrderByTimestampDesc(phoneNumber);
+            if (sentiments.isEmpty() && !phoneNumber.startsWith("+")) {
+                sentiments = sentimentRepository.findByPhoneNumberOrderByTimestampDesc("+" + phoneNumber);
+            }
+            if (sentiments.isEmpty() && phoneNumber.startsWith("+")) {
+                sentiments = sentimentRepository.findByPhoneNumberOrderByTimestampDesc(phoneNumber.substring(1));
+            }
+        }
+
+        logger.info("Found {} sentiments for phone {}", sentiments.size(), phoneNumber);
+
         Map<String, Object> report = new HashMap<>();
 
         // Basic info
@@ -189,7 +202,83 @@ public class WeeklyReportService {
         List<Map<String, Object>> dailyBreakdown = calculateDailyBreakdown(sentiments);
         analysis.put("daily_breakdown", dailyBreakdown);
 
+        // Hourly pattern for time-of-day analysis
+        Map<String, Object> hourlyPattern = calculateHourlyPattern(sentiments);
+        analysis.put("hourly_pattern", hourlyPattern);
+
+        // Sentiment distribution for pie chart
+        List<Map<String, Object>> sentimentDistribution = new ArrayList<>();
+        sentimentDistribution.add(Map.of("category", "Positive", "count", greenCount, "percentage", Math.round((greenCount * 100.0) / total), "color", "#a3b8a3"));
+        sentimentDistribution.add(Map.of("category", "Concern", "count", amberCount, "percentage", Math.round((amberCount * 100.0) / total), "color", "#f5b78a"));
+        sentimentDistribution.add(Map.of("category", "Critical", "count", redCount, "percentage", Math.round((redCount * 100.0) / total), "color", "#e57373"));
+        analysis.put("sentiment_distribution", sentimentDistribution);
+
+        // Week over week comparison
+        double weekScore = calculateAverageScore(sentiments);
+        analysis.put("average_score", Math.round(weekScore));
+        analysis.put("score_change", Math.round(calculateAverageScore(sentiments.subList(0, Math.min(sentiments.size()/2, sentiments.size()))) -
+                                                calculateAverageScore(sentiments.subList(Math.min(sentiments.size()/2, sentiments.size()), sentiments.size()))));
+
         return analysis;
+    }
+
+    private Map<String, Object> calculateHourlyPattern(List<ConversationSentiment> sentiments) {
+        Map<String, Object> pattern = new HashMap<>();
+
+        // Group by time of day
+        long morning = sentiments.stream().filter(s -> {
+            int hour = s.getTimestamp().getHour();
+            return hour >= 6 && hour < 12;
+        }).count();
+
+        long afternoon = sentiments.stream().filter(s -> {
+            int hour = s.getTimestamp().getHour();
+            return hour >= 12 && hour < 17;
+        }).count();
+
+        long evening = sentiments.stream().filter(s -> {
+            int hour = s.getTimestamp().getHour();
+            return hour >= 17 && hour < 21;
+        }).count();
+
+        long night = sentiments.size() - morning - afternoon - evening;
+
+        pattern.put("morning", morning);
+        pattern.put("afternoon", afternoon);
+        pattern.put("evening", evening);
+        pattern.put("night", night);
+
+        // Find most active time
+        String mostActive = "morning";
+        long maxCount = morning;
+        if (afternoon > maxCount) { mostActive = "afternoon"; maxCount = afternoon; }
+        if (evening > maxCount) { mostActive = "evening"; maxCount = evening; }
+        if (night > maxCount) { mostActive = "night"; }
+        pattern.put("most_active_time", mostActive);
+
+        // Calculate sentiment by time of day for chart
+        List<Map<String, Object>> timeOfDayChart = new ArrayList<>();
+        timeOfDayChart.add(Map.of("time", "Morning", "count", morning, "score", calculateTimeScore(sentiments, 6, 12)));
+        timeOfDayChart.add(Map.of("time", "Afternoon", "count", afternoon, "score", calculateTimeScore(sentiments, 12, 17)));
+        timeOfDayChart.add(Map.of("time", "Evening", "count", evening, "score", calculateTimeScore(sentiments, 17, 21)));
+        timeOfDayChart.add(Map.of("time", "Night", "count", night, "score", calculateTimeScore(sentiments, 21, 6)));
+        pattern.put("time_of_day_chart", timeOfDayChart);
+
+        return pattern;
+    }
+
+    private int calculateTimeScore(List<ConversationSentiment> sentiments, int startHour, int endHour) {
+        List<ConversationSentiment> filtered = sentiments.stream()
+            .filter(s -> {
+                int hour = s.getTimestamp().getHour();
+                if (startHour < endHour) {
+                    return hour >= startHour && hour < endHour;
+                } else {
+                    return hour >= startHour || hour < endHour;
+                }
+            })
+            .collect(Collectors.toList());
+        return (int) Math.round(calculateAverageScore(filtered));
     }
 
     private String calculateTrend(List<ConversationSentiment> sentiments) {
