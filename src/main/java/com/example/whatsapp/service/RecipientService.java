@@ -89,8 +89,16 @@ public class RecipientService {
     }
     
     public Optional<Recipient> getRecipientByPhoneNumber(String phoneNumber) {
+        // Normalize phone number for comparison (remove + prefix if present)
+        String normalizedInput = phoneNumber != null ? phoneNumber.replaceAll("^\\+", "") : "";
+
         return recipients.stream()
-                .filter(r -> r.getPhoneNumber().equals(phoneNumber))
+                .filter(r -> {
+                    String normalizedRecipient = r.getPhoneNumber() != null
+                        ? r.getPhoneNumber().replaceAll("^\\+", "")
+                        : "";
+                    return normalizedRecipient.equals(normalizedInput);
+                })
                 .findFirst();
     }
     

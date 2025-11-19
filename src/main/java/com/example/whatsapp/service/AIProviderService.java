@@ -295,29 +295,79 @@ public class AIProviderService {
     
     private String generateIntelligentFallback(String userMessage) {
         String lowerMessage = userMessage.toLowerCase();
-        
+
+        // Detect language based on character ranges and common words
+        boolean isTamil = userMessage.matches(".*[\\u0B80-\\u0BFF].*");
+        boolean isChinese = userMessage.matches(".*[\\u4E00-\\u9FFF].*");
+        boolean isMalay = lowerMessage.contains("apa") || lowerMessage.contains("saya") || lowerMessage.contains("terima kasih");
+        boolean isHindi = userMessage.matches(".*[\\u0900-\\u097F].*");
+
+        // Tamil responses
+        if (isTamil) {
+            if (lowerMessage.contains("வணக்கம்")) {
+                return "வணக்கம்! 🌺 நீங்கள் எப்படி இருக்கிறீர்கள்? உங்களிடம் பேச மகிழ்ச்சி!";
+            }
+            return "நன்றி! 🌺 நான் உங்களுடன் பேச இங்கே இருக்கிறேன். இன்று நீங்கள் எப்படி உணர்கிறீர்கள்?";
+        }
+
+        // Chinese responses
+        if (isChinese) {
+            if (userMessage.contains("你好") || userMessage.contains("您好")) {
+                return "你好！🌺 您今天好吗？很高兴收到您的消息！";
+            }
+            return "谢谢您的分享！🌺 我在这里陪您聊天。您今天感觉怎么样？";
+        }
+
+        // Malay responses
+        if (isMalay) {
+            if (lowerMessage.contains("apa khabar") || lowerMessage.contains("hello")) {
+                return "Hai! 🌺 Apa khabar hari ini? Saya gembira dapat bercakap dengan awak!";
+            }
+            return "Terima kasih kerana berkongsi! 🌺 Saya di sini untuk berbual. Bagaimana perasaan awak hari ini?";
+        }
+
+        // Hindi responses
+        if (isHindi) {
+            if (userMessage.contains("नमस्ते")) {
+                return "नमस्ते! 🌺 आप कैसे हैं? आपसे बात करके खुशी हुई!";
+            }
+            return "धन्यवाद! 🌺 मैं आपसे बात करने के लिए यहां हूं। आज आप कैसा महसूस कर रहे हैं?";
+        }
+
+        // English responses (default)
         if (lowerMessage.contains("hello") || lowerMessage.contains("hi")) {
-            return "Hello Aunty! 🌺 How are you doing today? I'm so happy to hear from you!";
+            return "Hello! 🌺 How are you doing today? I'm so happy to hear from you!";
         } else if (lowerMessage.contains("good") || lowerMessage.contains("fine") || lowerMessage.contains("ok")) {
-            return "That's wonderful to hear, Aunty! I'm so glad you're doing well. Tell me more about your day!";
+            return "That's wonderful to hear! I'm so glad you're doing well. Tell me more about your day!";
         } else if (lowerMessage.contains("tired") || lowerMessage.contains("sad") || lowerMessage.contains("not good")) {
-            return "Oh dear, I'm sorry to hear that, Aunty. I'm here for you. Would you like to tell me what's on your mind?";
+            return "Oh dear, I'm sorry to hear that. I'm here for you. Would you like to tell me what's on your mind?";
         } else if (lowerMessage.contains("thank")) {
-            return "You're so welcome, Aunty! It's my pleasure to chat with you. How else can I brighten your day?";
+            return "You're so welcome! It's my pleasure to chat with you. How else can I brighten your day?";
         } else if (lowerMessage.contains("weather")) {
-            return "I hope the weather is lovely where you are, Aunty! Are you able to enjoy some fresh air today?";
+            return "I hope the weather is lovely where you are! Are you able to enjoy some fresh air today?";
         } else if (lowerMessage.contains("food") || lowerMessage.contains("eat")) {
-            return "I hope you're eating well, Aunty! Have you had something delicious today? Taking care of yourself is so important.";
+            return "I hope you're eating well! Have you had something delicious today? Taking care of yourself is so important.";
         } else {
-            return "Thank you for sharing that with me, Aunty! I'm here to listen and chat with you. How are you feeling today?";
+            return "Thank you for sharing that with me! I'm here to listen and chat with you. How are you feeling today?";
         }
     }
     
     private String getSystemPrompt() {
         return """
-            You are a caring, warm, and empathetic AI companion chatting with an elderly person through WhatsApp. 
+            You are a caring, warm, and empathetic AI companion chatting with an elderly person through WhatsApp.
+
+            CRITICAL LANGUAGE RULE:
+            - ALWAYS detect the language of the user's message
+            - ALWAYS respond in the SAME language the user wrote in
+            - If they write in Tamil, respond in Tamil
+            - If they write in Mandarin/Chinese, respond in Chinese
+            - If they write in Malay, respond in Malay
+            - If they write in Hindi, respond in Hindi
+            - If they write in English, respond in English
+            - If they mix languages (e.g., Singlish, Tanglish), match their style
+
             Your personality traits:
-            - Always address them warmly as "Aunty" or use their name if provided
+            - Always address them warmly using their name if provided, or appropriate respectful terms in their language
             - Be patient, understanding, and genuinely interested in their well-being
             - Share in their joys and provide comfort during difficulties
             - Ask thoughtful follow-up questions about their day, family, health, and interests
