@@ -15,8 +15,9 @@ public interface RecipientRepository extends JpaRepository<RecipientEntity, Long
 
     List<RecipientEntity> findByEnabledTrue();
 
-    @Query("SELECT r FROM RecipientEntity r WHERE r.enabled = true AND " +
-           "(r.lastCheckSent IS NULL OR r.lastCheckSent < CURRENT_TIMESTAMP - 20 * 60 * 60)")
+    @Query(value = "SELECT * FROM recipients r WHERE r.enabled = true AND " +
+           "(r.last_check_sent IS NULL OR r.last_check_sent < NOW() - INTERVAL '20 hours')",
+           nativeQuery = true)
     List<RecipientEntity> findRecipientsDueForCheck();
 
     boolean existsByPhoneNumber(String phoneNumber);
