@@ -1,6 +1,7 @@
 package com.example.whatsapp.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -34,6 +35,9 @@ public class RecipientEntity {
 
     @Column(name = "relationship")
     private String relationship;
+
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
 
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
@@ -132,6 +136,14 @@ public class RecipientEntity {
 
     public void setRelationship(String relationship) {
         this.relationship = relationship;
+    }
+
+    public LocalDate getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(LocalDate dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
     }
 
     public String getNotes() {
