@@ -2,28 +2,57 @@ package com.example.whatsapp.service;
 
 import com.example.whatsapp.dto.SentimentAnalysis;
 import com.example.whatsapp.entity.ConversationSentiment;
+import com.example.whatsapp.model.Recipient;
 import com.example.whatsapp.repository.ConversationSentimentRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class ConversationSentimentService {
-    
+
     private static final Logger log = LoggerFactory.getLogger(ConversationSentimentService.class);
-    
+    private static final int ALERT_THRESHOLD = 3; // Number of concerning sentiments before alerting caretaker
+
+    @Value("${whatsapp.api.access-token}")
+    private String accessToken;
+
+    @Value("${whatsapp.api.phone-number-id}")
+    private String phoneNumberId;
+
+    @Value("${whatsapp.api.base-url:https://graph.facebook.com/v18.0}")
+    private String whatsAppApiBaseUrl;
+
     private final ConversationSentimentRepository sentimentRepository;
     private final SentimentAnalysisService sentimentAnalysisService;
-    
+    private final RecipientService recipientService;
+    private final WebClient.Builder webClientBuilder;
+
+    // Track consecutive concerning sentiment counts per user
+    private final Map<String, Integer> concerningSentimentCounts = new ConcurrentHashMap<>();
+    // Track last alert sent to avoid spamming caretakers
+    private final Map<String, LocalDateTime> lastAlertSent = new ConcurrentHashMap<>();
+
     public ConversationSentimentService(ConversationSentimentRepository sentimentRepository,
-                                      SentimentAnalysisService sentimentAnalysisService) {
+                                      SentimentAnalysisService sentimentAnalysisService,
+                                      RecipientService recipientService,
+                                      WebClient.Builder webClientBuilder) {
         this.sentimentRepository = sentimentRepository;
         this.sentimentAnalysisService = sentimentAnalysisService;
+        this.recipientService = recipientService;
+        this.webClientBuilder = webClientBuilder;
     }
     
     /**
@@ -42,15 +71,33 @@ public class ConversationSentimentService {
             
             ConversationSentiment saved = sentimentRepository.save(sentiment);
             
-            // Log important sentiment changes
-            if (analysis.getCategory() == SentimentAnalysis.SentimentCategory.RED) {
-                log.warn("RED ALERT: User {} shows concerning sentiment: {} (confidence: {})", 
-                        phoneNumber, analysis.getEmotionalIndicators(), analysis.getConfidence());
+            // Log important sentiment changes and track concerning patterns
+            if (analysis.getCategory() == SentimentAnalysis.SentimentCategory.RED ||
+                analysis.getCategory() == SentimentAnalysis.SentimentCategory.AMBER) {
+
+                // Increment concerning sentiment count
+                int count = concerningSentimentCounts.getOrDefault(phoneNumber, 0) + 1;
+                concerningSentimentCounts.put(phoneNumber, count);
+
+                if (analysis.getCategory() == SentimentAnalysis.SentimentCategory.RED) {
+                    log.warn("RED ALERT: User {} shows concerning sentiment: {} (confidence: {}). Consecutive count: {}",
+                            phoneNumber, analysis.getEmotionalIndicators(), analysis.getConfidence(), count);
+                } else {
+                    log.info("AMBER: User {} shows neutral/mixed sentiment. Consecutive count: {}", phoneNumber, count);
+                }
+
+                // Check if we need to alert caretaker
+                if (count >= ALERT_THRESHOLD) {
+                    checkAndAlertCaretaker(phoneNumber, analysis, count);
+                }
+
             } else if (analysis.getCategory() == SentimentAnalysis.SentimentCategory.GREEN) {
-                log.info("POSITIVE: User {} shows positive sentiment: {} (confidence: {})", 
+                // Reset concerning sentiment count on positive sentiment
+                concerningSentimentCounts.put(phoneNumber, 0);
+                log.info("POSITIVE: User {} shows positive sentiment: {} (confidence: {}). Resetting concern count.",
                         phoneNumber, analysis.getEmotionalIndicators(), analysis.getConfidence());
             }
-            
+
             return saved;
             
         } catch (Exception e) {
@@ -177,5 +224,124 @@ public class ConversationSentimentService {
         }
         
         return trend;
+    }
+
+    /**
+     * Check if caretaker should be alerted and send WhatsApp message
+     */
+    private void checkAndAlertCaretaker(String phoneNumber, SentimentAnalysis analysis, int consecutiveCount) {
+        try {
+            // Look up recipient to get caretaker info
+            Optional<Recipient> recipientOpt = recipientService.getRecipientByPhoneNumber(phoneNumber);
+
+            if (recipientOpt.isEmpty()) {
+                log.warn("No recipient found for phone number: {}. Cannot alert caretaker.", phoneNumber);
+                return;
+            }
+
+            Recipient recipient = recipientOpt.get();
+            String caretakerPhone = recipient.getCaretakerPhoneNumber();
+            String caretakerName = recipient.getCaretakerName();
+
+            if (caretakerPhone == null || caretakerPhone.isEmpty()) {
+                log.warn("No caretaker configured for user {}. Skipping alert.", recipient.getName());
+                return;
+            }
+
+            // Check if we recently sent an alert (within last hour) to avoid spamming
+            LocalDateTime lastAlert = lastAlertSent.get(phoneNumber);
+            if (lastAlert != null && lastAlert.isAfter(LocalDateTime.now().minusHours(1))) {
+                log.info("Alert already sent to caretaker within last hour for user {}. Skipping.", recipient.getName());
+                return;
+            }
+
+            // Build alert message
+            String userName = recipient.getDisplayName();
+            String category = analysis.getCategory().toString();
+            String indicators = analysis.getEmotionalIndicators() != null
+                    ? String.join(", ", analysis.getEmotionalIndicators())
+                    : "not specified";
+
+            String alertMessage = String.format(
+                    "⚠️ WELLNESS ALERT ⚠️\n\n" +
+                    "Hi %s,\n\n" +
+                    "This is an automated alert regarding %s.\n\n" +
+                    "📊 Status: %s sentiment detected\n" +
+                    "🔢 Consecutive concerning messages: %d\n" +
+                    "💭 Emotional indicators: %s\n\n" +
+                    "We recommend reaching out to check on their well-being.\n\n" +
+                    "- Wellness Companion System",
+                    caretakerName != null ? caretakerName : "Caretaker",
+                    userName,
+                    category,
+                    consecutiveCount,
+                    indicators
+            );
+
+            // Send WhatsApp message to caretaker
+            sendCaretakerAlert(caretakerPhone, alertMessage);
+
+            // Update last alert time
+            lastAlertSent.put(phoneNumber, LocalDateTime.now());
+
+            log.info("Caretaker alert sent to {} ({}) for user {} after {} concerning messages",
+                    caretakerName, caretakerPhone, userName, consecutiveCount);
+
+        } catch (Exception e) {
+            log.error("Failed to send caretaker alert for user {}: {}", phoneNumber, e.getMessage());
+        }
+    }
+
+    /**
+     * Send WhatsApp message to caretaker
+     */
+    private void sendCaretakerAlert(String caretakerPhoneNumber, String messageText) {
+        try {
+            WebClient webClient = webClientBuilder
+                    .baseUrl(whatsAppApiBaseUrl)
+                    .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                    .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                    .build();
+
+            // Build the message payload
+            Map<String, Object> message = new HashMap<>();
+            message.put("messaging_product", "whatsapp");
+            message.put("recipient_type", "individual");
+            message.put("to", caretakerPhoneNumber.replaceAll("^\\+", ""));
+
+            Map<String, String> text = new HashMap<>();
+            text.put("preview_url", "false");
+            text.put("body", messageText);
+            message.put("type", "text");
+            message.put("text", text);
+
+            String response = webClient
+                    .post()
+                    .uri("/{phoneNumberId}/messages", phoneNumberId)
+                    .body(Mono.just(message), Map.class)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+
+            log.info("Successfully sent caretaker alert to {}. Response: {}", caretakerPhoneNumber, response);
+
+        } catch (Exception e) {
+            log.error("Error sending caretaker alert to {}: {}", caretakerPhoneNumber, e.getMessage());
+        }
+    }
+
+    /**
+     * Get current concerning sentiment count for a user
+     */
+    public int getConcerningSentimentCount(String phoneNumber) {
+        return concerningSentimentCounts.getOrDefault(phoneNumber, 0);
+    }
+
+    /**
+     * Reset concerning sentiment count for a user (e.g., after manual intervention)
+     */
+    public void resetConcerningSentimentCount(String phoneNumber) {
+        concerningSentimentCounts.put(phoneNumber, 0);
+        log.info("Reset concerning sentiment count for user: {}", phoneNumber);
     }
 }

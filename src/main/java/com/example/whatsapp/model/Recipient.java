@@ -13,13 +13,16 @@ public class Recipient {
     private String timezone; // e.g., "Asia/Singapore", "America/New_York"
     private String relationship; // e.g., "daughter", "son", "friend"
     private String notes;
+    private String caretakerPhoneNumber; // Phone number to alert when sentiment is concerning
+    private String caretakerName; // Name of the caretaker
     
     // Constructors
     public Recipient() {
     }
     
-    public Recipient(String phoneNumber, String name, String preferredTimeOfDay, String customMessage, 
-                    boolean enabled, LocalDateTime lastCheckSent, String timezone, String relationship, String notes) {
+    public Recipient(String phoneNumber, String name, String preferredTimeOfDay, String customMessage,
+                    boolean enabled, LocalDateTime lastCheckSent, String timezone, String relationship, String notes,
+                    String caretakerPhoneNumber, String caretakerName) {
         this.phoneNumber = phoneNumber;
         this.name = name;
         this.preferredTimeOfDay = preferredTimeOfDay;
@@ -29,6 +32,8 @@ public class Recipient {
         this.timezone = timezone;
         this.relationship = relationship;
         this.notes = notes;
+        this.caretakerPhoneNumber = caretakerPhoneNumber;
+        this.caretakerName = caretakerName;
     }
     
     // Getters
@@ -67,7 +72,15 @@ public class Recipient {
     public String getNotes() {
         return notes;
     }
-    
+
+    public String getCaretakerPhoneNumber() {
+        return caretakerPhoneNumber;
+    }
+
+    public String getCaretakerName() {
+        return caretakerName;
+    }
+
     // Setters
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
@@ -104,7 +117,15 @@ public class Recipient {
     public void setNotes(String notes) {
         this.notes = notes;
     }
-    
+
+    public void setCaretakerPhoneNumber(String caretakerPhoneNumber) {
+        this.caretakerPhoneNumber = caretakerPhoneNumber;
+    }
+
+    public void setCaretakerName(String caretakerName) {
+        this.caretakerName = caretakerName;
+    }
+
     // Builder pattern
     public static Builder builder() {
         return new Builder();
@@ -120,6 +141,8 @@ public class Recipient {
         private String timezone;
         private String relationship;
         private String notes;
+        private String caretakerPhoneNumber;
+        private String caretakerName;
         
         public Builder phoneNumber(String phoneNumber) {
             this.phoneNumber = phoneNumber;
@@ -165,10 +188,21 @@ public class Recipient {
             this.notes = notes;
             return this;
         }
-        
+
+        public Builder caretakerPhoneNumber(String caretakerPhoneNumber) {
+            this.caretakerPhoneNumber = caretakerPhoneNumber;
+            return this;
+        }
+
+        public Builder caretakerName(String caretakerName) {
+            this.caretakerName = caretakerName;
+            return this;
+        }
+
         public Recipient build() {
-            return new Recipient(phoneNumber, name, preferredTimeOfDay, customMessage, 
-                               enabled, lastCheckSent, timezone, relationship, notes);
+            return new Recipient(phoneNumber, name, preferredTimeOfDay, customMessage,
+                               enabled, lastCheckSent, timezone, relationship, notes,
+                               caretakerPhoneNumber, caretakerName);
         }
     }
     

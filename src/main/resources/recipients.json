@@ -8,7 +8,9 @@
     "lastCheckSent": null,
     "timezone": "Singapore",
     "relationship": "friend",
-    "notes": "Sample recipient - enjoys morning conversations. Update with real contact information before enabling."
+    "notes": "Sample recipient - enjoys morning conversations. Update with real contact information before enabling.",
+    "caretakerPhoneNumber": "+6583824052",
+    "caretakerName": "Velu"
   },
   {
     "phoneNumber": "+6583824052",
@@ -19,7 +21,9 @@
     "lastCheckSent": null,
     "timezone": "Asia/Singapore",
     "relationship": "family",
-    "notes": "Sample recipient - prefers evening messages. Update with real contact information before enabling."
+    "notes": "Sample recipient - prefers evening messages. Update with real contact information before enabling.",
+    "caretakerPhoneNumber": "+6592489410",
+    "caretakerName": "Pardha"
   },
   {
     "phoneNumber": "+6592489410",
@@ -30,9 +34,11 @@
     "lastCheckSent": null,
     "timezone": "Asia/Singapore",
     "relationship": "family",
-    "notes": "Sample recipient - prefers Morning messages. Update with real contact information before enabling."
+    "notes": "Sample recipient - prefers Morning messages. Update with real contact information before enabling.",
+    "caretakerPhoneNumber": "+6583824052",
+    "caretakerName": "Velu"
   },
-    {
+  {
     "phoneNumber": "+6592206330",
     "name": "Cleave",
     "preferredTimeOfDay": "morning",
@@ -41,6 +47,8 @@
     "lastCheckSent": null,
     "timezone": "Asia/Singapore",
     "relationship": "family",
-    "notes": "Sample recipient - prefers evening messages. Update with real contact information before enabling."
+    "notes": "Sample recipient - prefers evening messages. Update with real contact information before enabling.",
+    "caretakerPhoneNumber": "+6583824052",
+    "caretakerName": "Velu"
   }
 ]
