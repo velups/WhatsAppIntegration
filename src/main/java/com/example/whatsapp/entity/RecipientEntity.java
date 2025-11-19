@@ -48,8 +48,21 @@ public class RecipientEntity {
     @Column(name = "caretaker_name")
     private String caretakerName;
 
+    @Column(name = "report_preference")
+    @Enumerated(EnumType.STRING)
+    private ReportPreference reportPreference;
+
+    @Column(name = "email")
+    private String email;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    public enum ReportPreference {
+        EMAIL,
+        WHATSAPP,
+        BOTH
+    }
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
@@ -168,6 +181,22 @@ public class RecipientEntity {
 
     public void setCaretakerName(String caretakerName) {
         this.caretakerName = caretakerName;
+    }
+
+    public ReportPreference getReportPreference() {
+        return reportPreference;
+    }
+
+    public void setReportPreference(ReportPreference reportPreference) {
+        this.reportPreference = reportPreference;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -244,7 +244,7 @@ public class WhatsAppService {
     /**
      * Send a message to WhatsApp user
      */
-    private void sendWhatsAppMessage(String recipientPhoneNumber, String messageText) {
+    public void sendWhatsAppMessage(String recipientPhoneNumber, String messageText) {
         try {
             WebClient webClient = webClientBuilder
                     .baseUrl(whatsAppApiBaseUrl)

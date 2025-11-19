@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Parent Well-being Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#4e9a91", // Muted teal
+            "background-light": "#f8f7f5", // Changed to a slightly warmer off-white
+            "background-dark": "#1a1a1a",
+            "accent": "#ee8c2b", // Warm coral/orange
+            "text-light": "#181411",
+            "text-dark": "#e5e5e5",
+            "subtle-light": "#897561",
+            "subtle-dark": "#a0a0a0",
+            "card-light": "#ffffff",
+            "card-dark": "#2c2c2c",
+            "status-green": "#a3b8a3", // Sage green
+            "status-amber": "#f5b78a", // Soft coral/orange
+            "status-red": "#e57373", // A soft red for concern
+          },
+          fontFamily: {
+            "display": ["Manrope", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.75rem",
+            "lg": "1rem",
+            "xl": "1.5rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      font-size: 24px;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-text-light dark:text-text-dark">
+<div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+<div class="flex items-center bg-background-light dark:bg-background-dark p-4 pb-2 justify-between sticky top-0 z-10 border-b border-gray-200 dark:border-gray-800">
+<div class="flex size-12 shrink-0 items-center justify-start">
+<span class="material-symbols-outlined">arrow_back</span>
+</div>
+<h1 class="text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">Eleanor's Summary</h1>
+<div class="flex w-12 items-center justify-end">
+<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 bg-transparent text-text-light dark:text-text-dark gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</div>
+<div class="p-4 space-y-6">
+<div class="bg-status-amber/20 dark:bg-status-amber/20 p-4 rounded-xl shadow-sm flex items-start gap-3">
+<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-status-amber/80 mt-1">
+<span class="material-symbols-outlined text-white">notifications</span>
+</div>
+<div>
+<p class="font-bold text-text-light dark:text-text-dark">Heads up: a slight shift</p>
+<p class="text-sm text-subtle-light dark:text-subtle-dark">A slight shift in mood detected. Consider reviewing recent insights for more context.</p>
+</div>
+</div>
+<div class="bg-card-light dark:bg-card-dark p-4 rounded-xl shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<div>
+<p class="text-base text-subtle-light dark:text-subtle-dark">Sentiment Trend</p>
+<p class="text-2xl font-bold">Declining</p>
+</div>
+<div class="text-right">
+<p class="text-base text-subtle-light dark:text-subtle-dark">Last 7 Days</p>
+<div class="flex items-center justify-end gap-1 text-status-red">
+<span class="material-symbols-outlined text-base">arrow_downward</span>
+<p class="text-base font-semibold">-12%</p>
+</div>
+</div>
+</div>
+<div class="flex h-[150px] w-full items-end justify-between gap-2 px-2 pt-4">
+<div class="flex h-full w-full flex-col justify-end items-center gap-1">
+<div class="w-full bg-status-green rounded-t-full" style="height: 90%;"></div><span class="text-xs text-subtle-light dark:text-subtle-dark">-6d</span>
+</div>
+<div class="flex h-full w-full flex-col justify-end items-center gap-1">
+<div class="w-full bg-status-green rounded-t-full" style="height: 80%;"></div><span class="text-xs text-subtle-light dark:text-subtle-dark">-5d</span>
+</div>
+<div class="flex h-full w-full flex-col justify-end items-center gap-1">
+<div class="w-full bg-status-amber rounded-t-full" style="height: 65%;"></div><span class="text-xs text-subtle-light dark:text-subtle-dark">-4d</span>
+</div>
+<div class="flex h-full w-full flex-col justify-end items-center gap-1">
+<div class="w-full bg-status-amber rounded-t-full" style="height: 50%;"></div><span class="text-xs text-subtle-light dark:text-subtle-dark">-3d</span>
+</div>
+<div class="flex h-full w-full flex-col justify-end items-center gap-1">
+<div class="w-full bg-status-amber rounded-t-full" style="height: 45%;"></div><span class="text-xs text-subtle-light dark:text-subtle-dark">-2d</span>
+</div>
+<div class="flex h-full w-full flex-col justify-end items-center gap-1">
+<div class="w-full bg-status-red rounded-t-full" style="height: 30%;"></div><span class="text-xs text-subtle-light dark:text-subtle-dark">Yest.</span>
+</div>
+<div class="flex h-full w-full flex-col justify-end items-center gap-1">
+<div class="w-full bg-status-red rounded-t-full" style="height: 25%;"></div><span class="text-xs font-bold text-text-light dark:text-text-dark">Today</span>
+</div>
+</div>
+<div class="mt-4 flex flex-col gap-3">
+<div class="flex items-center gap-3 p-3 rounded-lg bg-status-amber/20">
+<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-status-amber">
+<span class="material-symbols-outlined text-white">call</span>
+</div>
+<div>
+<p class="font-bold text-text-light dark:text-text-dark">Mood declining, a good time to reach out.</p>
+</div>
+</div>
+<div class="flex items-center gap-3 p-3 rounded-lg bg-status-red/20">
+<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-status-red">
+<span class="material-symbols-outlined text-white">priority_high</span>
+</div>
+<div>
+<p class="font-bold text-text-light dark:text-text-dark">Significant mood dip detected.</p>
+<p class="text-sm text-subtle-light dark:text-subtle-dark">A call today could make a difference.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="space-y-4">
+<h2 class="text-xl font-bold">Key Insights</h2>
+<div class="grid grid-cols-1 gap-4">
+<div class="bg-card-light dark:bg-card-dark p-4 rounded-xl shadow-sm">
+<div class="flex items-center gap-3 mb-3">
+<span class="material-symbols-outlined text-primary">auto_awesome</span>
+<h3 class="text-lg font-bold">Notable Moments</h3>
+</div>
+<div class="space-y-3">
+<p class="text-base text-subtle-light dark:text-subtle-dark">"The sun was just lovely today, I spent an hour with my roses."</p>
+<p class="text-base text-subtle-light dark:text-subtle-dark">"I'm enjoying that new book we talked about."</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-card-light dark:bg-card-dark p-4 rounded-xl shadow-sm">
+<h3 class="text-base font-semibold mb-2">Changes from Last Week</h3>
+<p class="text-2xl font-bold text-status-red">-12%</p>
+<p class="text-sm text-subtle-light dark:text-subtle-dark">Positive Sentiment</p>
+</div>
+<div class="bg-card-light dark:bg-card-dark p-4 rounded-xl shadow-sm">
+<h3 class="text-base font-semibold mb-2">Engagement Level</h3>
+<p class="text-2xl font-bold text-primary">High</p>
+<p class="text-sm text-subtle-light dark:text-subtle-dark">6 of 7 days</p>
+</div>
+</div>
+</div>
+</div>
+<div class="space-y-4">
+<h2 class="text-xl font-bold">Detailed Metrics</h2>
+<div class="grid grid-cols-1 gap-4">
+<div class="bg-card-light dark:bg-card-dark p-4 rounded-xl shadow-sm">
+<h3 class="text-lg font-bold mb-4">Sentiment Breakdown</h3>
+<div class="flex flex-col sm:flex-row items-center gap-4">
+<div class="relative flex h-36 w-36 items-center justify-center">
+<svg class="h-full w-full -rotate-90 transform" viewBox="0 0 36 36"><circle class="stroke-status-amber/30" cx="18" cy="18" fill="none" r="16" stroke-width="3"></circle><circle class="stroke-status-amber" cx="18" cy="18" fill="none" r="16" stroke-dasharray="100, 100" stroke-dashoffset="-75" stroke-linecap="round" stroke-width="3"></circle><circle class="stroke-primary" cx="18" cy="18" fill="none" r="16" stroke-dasharray="100, 100" stroke-dashoffset="-15" stroke-linecap="round" stroke-width="3"></circle></svg>
+<span class="absolute text-2xl font-bold">60%</span>
+</div>
+<div class="flex-1 space-y-2">
+<div class="flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-primary"></span><p>60% Positive</p></div>
+<div class="flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-status-amber"></span><p>25% Concern</p></div>
+<div class="flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-status-amber/30"></span><p>15% Neutral</p></div>
+</div>
+</div>
+</div>
+<div class="bg-card-light dark:bg-card-dark p-4 rounded-xl shadow-sm">
+<h3 class="text-lg font-bold mb-3">Topic Clouds</h3>
+<div class="flex flex-wrap gap-2">
+<span class="py-1.5 px-4 rounded-full bg-primary/10 text-primary-800 text-sm font-semibold dark:bg-primary/20 dark:text-primary-200">Gardening</span>
+<span class="py-1.5 px-4 rounded-full bg-primary/10 text-primary-800 text-sm font-semibold dark:bg-primary/20 dark:text-primary-200">Reading</span>
+<span class="py-1.5 px-4 rounded-full bg-primary/10 text-primary-800 text-sm font-semibold dark:bg-primary/20 dark:text-primary-200">Weather</span>
+<span class="py-1.5 px-4 rounded-full bg-status-amber/20 text-status-amber-800 text-sm font-semibold dark:bg-status-amber/20 dark:text-amber-200">Doctor's Visit</span>
+</div>
+</div>
+<div class="bg-card-light dark:bg-card-dark p-4 rounded-xl shadow-sm">
+<h3 class="text-lg font-bold mb-3">Time-of-Day Patterns</h3>
+<p class="text-base text-subtle-light dark:text-subtle-dark">Most responsive and positive during <span class="font-semibold text-text-light dark:text-text-dark">late mornings</span>.</p>
+</div>
+</div>
+</div>
+<div class="space-y-4">
+<h2 class="text-xl font-bold">Action Items</h2>
+<div class="bg-card-light dark:bg-card-dark p-4 rounded-xl shadow-sm space-y-4">
+<div>
+<h3 class="font-bold text-text-light dark:text-text-dark">Suggested Check-in Topics</h3>
+<ul class="list-disc list-inside text-subtle-light dark:text-subtle-dark space-y-1 mt-2">
+<li>Ask about her roses and what's new in the garden.</li>
+<li>Discuss the book she's currently reading.</li>
+</ul>
+</div>
+<div>
+<h3 class="font-bold text-text-light dark:text-text-dark">Quick Facts</h3>
+<p class="text-subtle-light dark:text-subtle-dark mt-1">She recently had a check-up and mentioned feeling a bit tired afterwards, but was otherwise fine.</p>
+</div>
+</div>
+</div>
+<div class="pt-4 pb-8 text-center">
+<div class="flex flex-col items-center gap-2 text-subtle-light dark:text-subtle-dark text-xs">
+<span class="material-symbols-outlined text-base">psychology</span>
+<p>
+            Analysis is performed by AI from daily check-ins.
+            <br/>
+            This is a supportive guide to help you stay connected.
+          </p>
+</div>
+</div>
+</div>
+</div>
+</body></html>
